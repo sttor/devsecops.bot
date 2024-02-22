@@ -1,0 +1,43 @@
+name: "Sast Security Code Scanning"
+on:
+  workflow_dispatch
+
+jobs:
+  sonarqube-job:
+    name: Scan code
+    runs-on: ubuntu-latest
+    container:
+      image: sttor/devsecops.bot
+      env:
+        fail_build: "false"
+        component: "dfa"
+        url: "http://devsecops.bot:9004"
+        username: "admin"
+        password: "admin"
+        #temp token will be deleted
+        slack_token: ${{ secrets.SLACK_BOT_TOKEN }}
+        slack_channel: "C03N5I4URN9"
+
+    services:
+      devsecops:
+        image: sttor/devsecops.bot
+        env:
+          PRE_CHECKS_DISABLE: true
+        ports:
+          - 9004:9004
+    steps:
+      - name: Curl sonarqube server status
+        run: |
+          curl --connect-timeout 5 \
+          --retry-connrefused \
+          'http://devsecops.bot:9000/api/system/status'
+
+      - name: Check out repository code
+        uses: actions/checkout@v2
+
+      - name: Run sast
+        run: devsecops-bot-scanner
+
+
+      - name: Install Some python Dependendencies
+        run: pip3 install requests lxml
